@@ -95,13 +95,13 @@ export default function Footer() {
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => scrollToSection('features')} className="hover:text-emerald-400 transition-colors duration-200 cursor-pointer flex items-center gap-1 group">
+                  <button onClick={() => scrollToSection('why-exact-pay')} className="hover:text-emerald-400 transition-colors duration-200 cursor-pointer flex items-center gap-1 group">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/0 group-hover:bg-emerald-500 transition-all duration-300" />
-                    <span>Features</span>
+                    <span>Why Exact Pay</span>
                   </button>
                 </li>
                 <li>
-                  <button onClick={() => scrollToSection('how-it-works')} className="hover:text-emerald-400 transition-colors duration-200 cursor-pointer flex items-center gap-1 group">
+                  <button onClick={() => scrollToSection('how-to-generate')} className="hover:text-emerald-400 transition-colors duration-200 cursor-pointer flex items-center gap-1 group">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/0 group-hover:bg-emerald-500 transition-all duration-300" />
                     <span>How it Works</span>
                   </button>

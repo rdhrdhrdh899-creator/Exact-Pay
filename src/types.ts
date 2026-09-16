@@ -29,3 +29,25 @@ export interface QRTheme {
   qrColor: string;
   primaryColor: string;
 }
+
+export interface UserProfile {
+  uid: string;
+  displayName: string | null;
+  email: string | null;
+  phoneNumber: string | null;
+  photoURL: string | null;
+  provider: 'google' | 'phone' | 'multiple';
+  defaultUpiId?: string;
+  defaultPayeeName?: string;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+export interface SavedQRCode {
+  id: string;
+  userId: string;
+  title: string;
+  paymentData: PaymentData;
+  type: TabType;
+  createdAt: number;
+}

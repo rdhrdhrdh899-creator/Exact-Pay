@@ -3,20 +3,26 @@ import { QRCodeToDataURLOptions } from 'qrcode';
 import QRCode from 'qrcode';
 import { PaymentData, TabType } from '../types';
 import { generateUpiUrl, qrThemes, downloadStyledQR } from '../utils';
-import { Copy, Check, Download, Share2, Palette, Landmark, ShieldCheck } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { saveUserQRCode } from '../services/userService';
+import { Copy, Check, Download, Share2, Palette, Landmark, ShieldCheck, Bookmark, Loader2 } from 'lucide-react';
 
 interface QRResultProps {
   activeTab: TabType;
   formData: PaymentData;
   isValid: boolean;
+  onOpenAuth?: () => void;
 }
 
-export default function QRResult({ activeTab, formData, isValid }: QRResultProps) {
+export default function QRResult({ activeTab, formData, isValid, onOpenAuth }: QRResultProps) {
+  const { currentUser, isAuthenticated } = useAuth();
   const [selectedThemeId, setSelectedThemeId] = useState('emerald');
   const [qrBase64, setQrBase64] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [shareSuccess, setShareSuccess] = useState(false);
+  const [isSavingToAccount, setIsSavingToAccount] = useState(false);
+  const [savedSuccess, setSavedSuccess] = useState(false);
 
   const upiUrl = generateUpiUrl(activeTab, formData);
   const activeTheme = qrThemes.find((t) => t.id === selectedThemeId) || qrThemes[0];
@@ -90,6 +96,25 @@ export default function QRResult({ activeTab, formData, isValid }: QRResultProps
       await handleCopyLink();
       setShareSuccess(true);
       setTimeout(() => setShareSuccess(false), 2000);
+    }
+  };
+
+  const handleSaveToAccount = async () => {
+    if (!isValid) return;
+    if (!isAuthenticated || !currentUser) {
+      if (onOpenAuth) onOpenAuth();
+      return;
+    }
+    setIsSavingToAccount(true);
+    try {
+      const title = formData.payeeName ? `${formData.payeeName} Payment` : 'Quick Payment';
+      await saveUserQRCode(currentUser.uid, formData, title, activeTab);
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 2500);
+    } catch (err) {
+      console.error('Failed saving to account:', err);
+    } finally {
+      setIsSavingToAccount(false);
     }
   };
 
@@ -302,6 +327,39 @@ export default function QRResult({ activeTab, formData, isValid }: QRResultProps
           <span>{shareSuccess ? 'Copied URL!' : 'Share'}</span>
         </button>
       </div>
+
+      {/* Save to User Account (Protected feature) */}
+      {isValid && (
+        <div className="pt-1">
+          <button
+            type="button"
+            onClick={handleSaveToAccount}
+            disabled={isSavingToAccount}
+            className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold border transition-all cursor-pointer shadow-sm ${
+              savedSuccess
+                ? 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500 text-emerald-600 dark:text-emerald-400'
+                : 'bg-emerald-50/60 dark:bg-emerald-950/20 hover:bg-emerald-100/60 dark:hover:bg-emerald-900/30 border-emerald-200 dark:border-emerald-800/60 text-emerald-700 dark:text-emerald-300'
+            }`}
+          >
+            {isSavingToAccount ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Saving to your account...</span>
+              </>
+            ) : savedSuccess ? (
+              <>
+                <Check className="w-3.5 h-3.5" />
+                <span>Saved to your Exact Pay account!</span>
+              </>
+            ) : (
+              <>
+                <Bookmark className="w-3.5 h-3.5" />
+                <span>{isAuthenticated ? 'Save QR to My Account' : 'Sign In to Save This QR'}</span>
+              </>
+            )}
+          </button>
+        </div>
+      )}
 
       {/* Raw clickable URI for developers/debug */}
       {isValid && (

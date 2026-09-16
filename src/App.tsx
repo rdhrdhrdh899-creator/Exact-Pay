@@ -8,9 +8,27 @@ import WhyExactPay from './components/WhyExactPay';
 import HowToGenerate from './components/HowToGenerate';
 import FaqAccordion from './components/FaqAccordion';
 import Footer from './components/Footer';
-import { CreditCard, Landmark, CheckCircle2, ShieldCheck, HelpCircle, Menu, X } from 'lucide-react';
+import { useAuth } from './context/AuthContext';
+import AuthModal from './components/auth/AuthModal';
+import UserProfileModal from './components/auth/UserProfileModal';
+import SavedQRsModal from './components/auth/SavedQRsModal';
+import { 
+  CreditCard, 
+  Landmark, 
+  CheckCircle2, 
+  ShieldCheck, 
+  HelpCircle, 
+  Menu, 
+  X, 
+  User as UserIcon, 
+  QrCode, 
+  LogOut, 
+  LogIn 
+} from 'lucide-react';
 
 export default function App() {
+  const { currentUser, userProfile, isAuthenticated, loading, logout } = useAuth();
+  
   const [activeTab, setActiveTab] = useState<TabType>('upi');
   const [formData, setFormData] = useState<PaymentData>({
     upiId: '',
@@ -24,6 +42,25 @@ export default function App() {
   const [isValid, setIsValid] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
+
+  // Auth modals state
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authMessage, setAuthMessage] = useState('');
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
+  const [savedQRsModalOpen, setSavedQRsModalOpen] = useState(false);
+
+  // Prefill default UPI / payee info if user saved preferences in profile
+  useEffect(() => {
+    if (userProfile && !formData.upiId) {
+      if (userProfile.defaultUpiId) {
+        setFormData((prev) => ({
+          ...prev,
+          upiId: userProfile.defaultUpiId || prev.upiId,
+          payeeName: prev.payeeName || userProfile.defaultPayeeName || userProfile.displayName || ''
+        }));
+      }
+    }
+  }, [userProfile]);
 
   // Typing effect phrases
   const phrases = [
@@ -239,10 +276,59 @@ export default function App() {
           </nav>
 
           {/* Action Buttons (Desktop) */}
-          <div className="hidden md:flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-3">
+            {isAuthenticated ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setSavedQRsModalOpen(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 bg-white/60 dark:bg-slate-900/60 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/30 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-all cursor-pointer shadow-sm"
+                  title="View Saved Payment QRs"
+                >
+                  <QrCode className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Saved QRs</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setProfileModalOpen(true)}
+                  className="inline-flex items-center gap-2 py-1.5 px-3 rounded-full border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 bg-white dark:bg-slate-900 text-xs font-semibold text-slate-800 dark:text-slate-200 transition-all cursor-pointer shadow-sm group"
+                >
+                  {currentUser?.photoURL ? (
+                    <img 
+                      src={currentUser.photoURL} 
+                      alt="" 
+                      className="w-6 h-6 rounded-full object-cover border border-emerald-500/40" 
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-emerald-600 text-white flex items-center justify-center text-[10px] font-bold">
+                      {(currentUser?.displayName || currentUser?.phoneNumber || 'U')[0].toUpperCase()}
+                    </div>
+                  )}
+                  <span className="max-w-[110px] truncate">
+                    {currentUser?.displayName || (currentUser?.phoneNumber ? currentUser.phoneNumber.slice(-4) : 'Account')}
+                  </span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMessage('');
+                  setAuthModalOpen(true);
+                }}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-slate-200 dark:border-slate-800 hover:border-emerald-500/50 bg-white/60 dark:bg-slate-900/60 hover:bg-slate-50 dark:hover:bg-slate-850 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-all cursor-pointer shadow-sm"
+              >
+                <LogIn className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Sign In</span>
+              </button>
+            )}
+
             <a
               href="#payment-generator-form"
-              className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold px-6 py-2.5 rounded-full shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/35 transition-all duration-300 text-sm tracking-wide flex items-center gap-1"
+              className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-semibold px-5 py-2 rounded-full shadow-md shadow-emerald-500/20 hover:shadow-emerald-500/35 transition-all duration-300 text-xs tracking-wide flex items-center gap-1"
             >
               Generate Free →
             </a>
@@ -264,44 +350,124 @@ export default function App() {
 
         {/* Mobile Navigation Panel */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-slate-100 dark:border-slate-900 bg-white dark:bg-slate-950 px-4 py-6 flex flex-col gap-5 text-base font-semibold animate-slideDown shadow-xl">
+          <div className="md:hidden border-t border-slate-100 dark:border-slate-900 bg-white dark:bg-slate-950 px-4 py-6 flex flex-col gap-4 text-base font-semibold animate-slideDown shadow-xl">
+            {/* User status card on mobile */}
+            {isAuthenticated ? (
+              <div className="p-3.5 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-100 dark:border-emerald-900/50 flex items-center justify-between">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {currentUser?.photoURL ? (
+                    <img 
+                      src={currentUser.photoURL} 
+                      alt="" 
+                      className="w-9 h-9 rounded-xl object-cover border border-emerald-500/30" 
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-sm font-bold">
+                      {(currentUser?.displayName || currentUser?.phoneNumber || 'U')[0].toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                      {currentUser?.displayName || 'Exact Pay User'}
+                    </p>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                      {currentUser?.email || currentUser?.phoneNumber}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setProfileModalOpen(true);
+                  }}
+                  className="px-2.5 py-1 text-xs font-semibold bg-emerald-600 text-white rounded-lg cursor-pointer"
+                >
+                  Manage
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setAuthMessage('');
+                  setAuthModalOpen(true);
+                }}
+                className="w-full py-2.5 px-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 font-semibold text-xs flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>Sign In / Create Account</span>
+              </button>
+            )}
+
             <a
               href="#payment-generator-form"
               onClick={() => setMobileMenuOpen(false)}
-              className="text-slate-600 dark:text-slate-300 hover:text-emerald-500 dark:hover:text-emerald-400 py-1 transition-colors"
+              className="text-slate-600 dark:text-slate-300 hover:text-emerald-500 dark:hover:text-emerald-400 py-1 transition-colors text-sm"
             >
               Generator
             </a>
             <a
               href="#why-exact-pay"
               onClick={() => setMobileMenuOpen(false)}
-              className="text-slate-600 dark:text-slate-300 hover:text-emerald-500 dark:hover:text-emerald-400 py-1 transition-colors"
+              className="text-slate-600 dark:text-slate-300 hover:text-emerald-500 dark:hover:text-emerald-400 py-1 transition-colors text-sm"
             >
               Why Exact Pay
             </a>
             <a
               href="#how-to-generate"
               onClick={() => setMobileMenuOpen(false)}
-              className="text-slate-600 dark:text-slate-300 hover:text-emerald-500 dark:hover:text-emerald-400 py-1 transition-colors"
+              className="text-slate-600 dark:text-slate-300 hover:text-emerald-500 dark:hover:text-emerald-400 py-1 transition-colors text-sm"
             >
               How It Works
             </a>
             <a
               href="#faq"
               onClick={() => setMobileMenuOpen(false)}
-              className="text-slate-600 dark:text-slate-300 hover:text-emerald-500 dark:hover:text-emerald-400 py-1 transition-colors"
+              className="text-slate-600 dark:text-slate-300 hover:text-emerald-500 dark:hover:text-emerald-400 py-1 transition-colors text-sm"
             >
               FAQ
             </a>
+
+            {isAuthenticated && (
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-900 flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setSavedQRsModalOpen(true);
+                  }}
+                  className="text-left text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 py-1 flex items-center gap-2"
+                >
+                  <QrCode className="w-4 h-4 text-emerald-500" />
+                  <span>View Saved QR Codes & Links</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    logout();
+                  }}
+                  className="text-left text-xs font-semibold text-red-500 hover:text-red-600 py-1 flex items-center gap-2"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            )}
+
             <a
               href="#payment-generator-form"
               onClick={() => setMobileMenuOpen(false)}
-              className="w-full text-center bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold py-3 rounded-full shadow-lg shadow-emerald-500/20"
+              className="w-full text-center bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-semibold py-2.5 rounded-full shadow-lg shadow-emerald-500/20 text-xs mt-1"
             >
               Generate Free →
             </a>
           </div>
         )}
+
       </header>
 
       {/* Hero Section */}
@@ -345,6 +511,10 @@ export default function App() {
               activeTab={activeTab}
               formData={formData}
               isValid={isValid}
+              onOpenAuth={() => {
+                setAuthMessage('Sign in to save this payment QR to your account');
+                setAuthModalOpen(true);
+              }}
             />
           </div>
 
@@ -366,6 +536,33 @@ export default function App() {
       {/* Footer */}
       <Footer />
 
+      {/* Authentication Modals */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        initialMessage={authMessage}
+      />
+
+      <UserProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        onOpenSavedQRs={() => setSavedQRsModalOpen(true)}
+      />
+
+      <SavedQRsModal
+        isOpen={savedQRsModalOpen}
+        onClose={() => setSavedQRsModalOpen(false)}
+        onLoadIntoForm={(data, type) => {
+          setActiveTab(type);
+          setFormData(data);
+        }}
+        onOpenAuth={() => {
+          setAuthMessage('Sign in to access your saved payment QR codes');
+          setAuthModalOpen(true);
+        }}
+      />
+
     </div>
   );
 }
+

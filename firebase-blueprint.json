@@ -1,0 +1,45 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile with display information and payment preferences",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "maxLength": 128 },
+        "displayName": { "type": "string", "maxLength": 120 },
+        "email": { "type": "string", "maxLength": 150 },
+        "phoneNumber": { "type": "string", "maxLength": 30 },
+        "photoURL": { "type": "string", "maxLength": 500 },
+        "provider": { "type": "string", "enum": ["google", "phone", "multiple"] },
+        "defaultUpiId": { "type": "string", "maxLength": 80 },
+        "defaultPayeeName": { "type": "string", "maxLength": 120 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "provider"]
+    },
+    "SavedQRCode": {
+      "title": "Saved QR Code",
+      "description": "User saved UPI QR code and payment link configurations",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "userId": { "type": "string", "maxLength": 128 },
+        "title": { "type": "string", "maxLength": 120 },
+        "type": { "type": "string", "enum": ["upi", "bank"] },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["id", "userId", "title", "type"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Individual user profile documents accessible exclusively by the owning user"
+    },
+    "/users/{userId}/saved_qrs/{qrId}": {
+      "schema": "SavedQRCode",
+      "description": "User saved payment QR codes and links"
+    }
+  }
+}
