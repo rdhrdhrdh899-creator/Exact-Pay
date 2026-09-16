@@ -53,6 +53,13 @@ export function mapAuthError(error: any): string {
     return `Domain "${currentDomain}" is not authorized in Firebase. Add "${currentDomain}" to Firebase Console -> Authentication -> Settings -> Authorized domains.`;
   }
   if (
+    code === 'auth/billing-not-enabled' ||
+    message.includes('billing-not-enabled') ||
+    message.includes('billing is not enabled')
+  ) {
+    return 'Firebase requires the Blaze plan or a pre-configured test phone number to send real SMS. You can sign in instantly with Google (100% free), or add a test phone number in Firebase Console.';
+  }
+  if (
     code === 'auth/operation-not-allowed' || 
     message.includes('operation-not-allowed') ||
     message.includes('SMS unable to be sent until this region enabled')

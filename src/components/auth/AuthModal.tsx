@@ -264,6 +264,24 @@ export default function AuthModal({
                 </button>
               </div>
             )}
+
+            {/* If error is billing or Blaze, offer 1-click Google Sign-in */}
+            {(error.includes('Blaze') || error.includes('billing')) && (
+              <div className="mt-1 pt-2 border-t border-red-200/70 dark:border-red-900/40 flex flex-wrap items-center justify-between gap-2 text-xs">
+                <span className="text-[11px] text-red-700 dark:text-red-300 font-medium">
+                  Google Sign-In is 100% free and requires no billing.
+                </span>
+                <button
+                  type="button"
+                  onClick={handleGoogleSignIn}
+                  disabled={authActionLoading !== null}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs transition-colors cursor-pointer shadow-sm"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Sign in with Google</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -480,6 +498,10 @@ export default function AuthModal({
               <div>
                 <strong className="text-slate-700 dark:text-slate-200 block mb-0.5">2. Fix "SMS Region" / Operation Not Allowed:</strong>
                 <span>In Firebase Console → Authentication → Settings → <strong>SMS Region Policy</strong>, enable India (+91) or your country, OR add a test phone number under Sign-in method → Phone → Phone numbers for testing (e.g. +91 9876543210 with code 123456).</span>
+              </div>
+              <div>
+                <strong className="text-slate-700 dark:text-slate-200 block mb-0.5">3. Fix "billing-not-enabled" (Phone SMS):</strong>
+                <span>Firebase requires Cloud Billing (Blaze plan) to send real carrier SMS. You can sign in with <strong>Google</strong> (100% free with no billing), or register a free test phone number in Firebase Console → Authentication → Sign-in method → Phone → <strong>Phone numbers for testing</strong> (e.g. <code className="bg-slate-200/60 dark:bg-slate-700 px-1 py-0.5 rounded font-mono text-[10px]">+91 9876543210</code> with code <code className="bg-slate-200/60 dark:bg-slate-700 px-1 py-0.5 rounded font-mono text-[10px]">123456</code>).</span>
               </div>
             </div>
           </details>
